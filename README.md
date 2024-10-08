@@ -11,14 +11,14 @@ This model is still actively under development.
 
 You can simply clone this repository to access the LSTM, which is in the notebook, and several small preliminary data sets. 
 The following packages are required:
--numpy
--pandas
--matplotlib
--IPython
--math
--torch
--scikit-learn
--tqdm
+- numpy
+- pandas
+- matplotlib
+- IPython
+- math
+- torch
+- scikit-learn
+- tqdm
 
 Additionally, the LSTM can run on a CPU, but is optimized for a machine with a CUDA-enabled GPU or Apple MPS.
 
