@@ -7,7 +7,7 @@ Initial testing using synthetic data showed promising results. This project impl
 
 This model is still actively under development.
 
-## Requirements
+## LSTM model notes
 
 You can simply clone this repository to access the LSTM, which is in the notebook, and several small preliminary data sets. 
 The following packages are required:
@@ -22,5 +22,25 @@ The following packages are required:
 
 Additionally, the LSTM can run on a CPU, but is optimized for a machine with a CUDA-enabled GPU or Apple MPS.
 
-## Usage
 You can simply change out the file path to the data at the beginning of section 1.2. There may be errors with names of model parameters, but those are easy to fix.
+
+## Using the data preprocessing notebook
+
+This notebook assumes that you have a good amount of NetCDF files downloaded from the NOAA NWM retrospective AWS bucket and that you want to preprocess these files into a format that the LSTM model code likes. It also assumes that you want a random sample of points from some shapefile. You will need a shapefile of some area within CONUS. You will need the following packages:
+- pandas
+- geopandas
+- numpy
+- shapely
+- shutil
+- datetime
+- random
+- multiprocessing
+- xarray
+- os
+- sys
+- glob
+- ngiab_data_preprocess
+
+The notebook will generate random points from a shapefile, find its corresponding catchment (arbitrarily considered downstream), select an upstream catchment close to each downstream catchment, and collect forcing/streamflow/attribute data from the NWM NetCDF files into a nice CSV.
+
+Note: the notebook requires some extra work on the user's end. An intermediate step requires the use of an R package or GIS software (R recommended).
