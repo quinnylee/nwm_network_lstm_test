@@ -36,8 +36,9 @@ time_arg = sys.argv[1]
 warnings.filterwarnings('ignore')
 
 # Reads information about desired catchments from csv
-cats_path = 'path/to/csv'
+cats_path = 'all_data.csv'
 catchments = pd.read_csv(cats_path)
+catchments = catchments[:1000]
 
 # generate pair IDs for each upstream/downstream pair of catchments in case data gets shuffled around by accident
 pairids = []
@@ -53,7 +54,7 @@ catchments['pair_id'] = pairids
 comids = catchments['comid'].tolist()
 
 # path to catchment attributes
-ngiab_output_dir = '/media/volume/Imp_Data/quinn_test_atts/ngiab_preprocess_output/'
+ngiab_output_dir = '/media/volume/Clone_Imp_Data/quinn_test_atts/ngiab_preprocess_output/'
 
 # generate path to attribute files for one catchment, as well as CATID
 def getclosest_array(i):
@@ -80,7 +81,7 @@ def parallel_gca():
 attr_paths, catids = parallel_gca()
 
 # use globbed filepath, opens forcing NC files 
-forc_path = "/media/volume/Imp_Data/FORCING/" + time_arg + ".LDASIN_DOMAIN1"
+forc_path = "/media/volume/Clone_Imp_Data/FORCING/" + time_arg + ".LDASIN_DOMAIN1"
 forc_dataset = xr.open_mfdataset(forc_path)
 
 # get timestamps for all time steps in study period
@@ -123,7 +124,7 @@ def get_q(qlat_files, id_list, index_col="feature_id", value_col="streamflow"):
     return frame
 
 # use globbed filepath to generate q_dataset
-chrtout_path = "/media/volume/Imp_Data/CHRTOUT/" + time_arg + ".CHRTOUT_DOMAIN1"
+chrtout_path = "/media/volume/Clone_Imp_Data/CHRTOUT/" + time_arg + ".CHRTOUT_DOMAIN1"
 q_dataset = get_q(glob.glob(chrtout_path), comids)
 q_dataset.reset_index(inplace=True)
 
@@ -207,9 +208,14 @@ def process_catchment(k):
 
 # Collects and saves data for all catchments over all timesteps
 # Outputs a file that logs errors and progress
-output_name = 'output' + datetime.date.today().isoformat() + '.txt'
+exp_dirname = '../runs/experiment_'+datetime.date.today().isoformat()+'/'
+if not os.path.exists(exp_dirname):
+    os.makedirs(exp_dirname)
+output_name = exp_dirname + 'output.txt'
+
 results = []
-for i in range(len(catchments)):
+#for i in range(len(catchments)):
+for i in range(2):
     try:
         result = process_catchment(i)
         results.append(result)
@@ -231,7 +237,7 @@ except Exception as e:
         file.write(f"Error: {e}\n")
 
 try:
-    data.to_csv('runs/experiment_2024-10-15/jan_data_agg.csv')
+    data.to_csv(exp_dirname + 'data.csv') # change this to whatever name you like
     with open(output_name, 'a') as file:
         file.write('saved :D\n')
 except Exception as e:
