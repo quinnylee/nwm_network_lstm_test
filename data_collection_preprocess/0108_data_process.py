@@ -98,6 +98,16 @@ for i in range(len(times)):
 problem_comids = []
 
 # gets all relevant streamflow data from one timestep (one CHRTOUT file)
+def process_chrtout_file2(filename, id_list, value_col="streamflow"):
+    with xr.open_dataset(filename) as ds:
+        df =  ds[["time", value_col]].sel(feature_id=id_list).to_dataframe()
+        # with ThreadPoolExecutor(max_workers = 100) as executor:
+        #     df_list = list(executor.map(lambda id: nested_multithreading_catchments(id, ds, value_col), id_list))
+        # df = pd.concat(df_list)
+        return df
+    
+'''
+# gets all relevant streamflow data from one timestep (one CHRTOUT file)
 def process_chrtout_file(filename, id_list, value_col="streamflow"):
     with xr.open_dataset(filename) as ds:
         df_list = []
@@ -111,13 +121,13 @@ def process_chrtout_file(filename, id_list, value_col="streamflow"):
             #id_list.remove[id]
 
         df = pd.concat(df_list)
-        return df
+        return df'''
 
 # gets all relevant streamflow data from multiple timesteps through parallelization
 def get_q(qlat_files, id_list, index_col="feature_id", value_col="streamflow"):
 
     with mp.Pool(processes=mp.cpu_count()) as pool:
-        results = pool.starmap(process_chrtout_file, [(filename, id_list) for filename in qlat_files])
+        results = pool.starmap(process_chrtout_file2, [(filename, id_list) for filename in qlat_files])
 
     frame = pd.concat(results, axis=0, ignore_index=False)
 
@@ -211,7 +221,13 @@ def process_catchment(k):
 exp_dirname = '../runs/experiment_'+datetime.date.today().isoformat()+'/'
 if not os.path.exists(exp_dirname):
     os.makedirs(exp_dirname)
+
 output_name = exp_dirname + 'output.txt'
+
+# separate runs in output file
+with open(output_name, 'a') as file:
+    toprint = 'Run started at ' + datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' for ' + time_arg + '\n'
+    file.write(toprint)
 
 results = []
 #for i in range(len(catchments)):

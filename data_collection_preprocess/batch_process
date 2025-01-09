@@ -14,9 +14,9 @@
 
 #!/bin/bash
 
-times=("2008/200801*" "2008/200802*" "2008/200803*")
+times=("2008/20080101*" "2008/20080102*" "2008/20080103*")
 
 for time in "${times[@]}"
 do
-    python 0108_data_process.py $time
+    python3 0108_data_process.py $time
 done
