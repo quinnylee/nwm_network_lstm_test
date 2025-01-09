@@ -1,0 +1,22 @@
+# This script runs 0108_data_process.py, looping through the given time arguments.
+# This script is experimental.
+#
+# Execute using the following commands:
+# bash batch_process
+#
+# Alternatively, run
+# chmod +x batch_process
+# ./batch_process
+#
+# 01/09/2025
+# Quinn Lee - qylee@crimson.ua.edu
+# Sonam Lama - slama@crimson.ua.edu
+
+#!/bin/bash
+
+times=("2008/200801*" "2008/200802*" "2008/200803*")
+
+for time in "${times[@]}"
+do
+    python 0108_data_process.py $time
+done

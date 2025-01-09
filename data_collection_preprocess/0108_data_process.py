@@ -1,12 +1,17 @@
 '''
 Given a csv file of study site pairs and their COMIDs, this script can be used to
 preprocess NWM forcings and attributes for the purposes of an ML model. Please
-make sure you have the Lynker NWM hydrofabric downloaded, and make sure you change
-the filepath in the appropriate line.
+make sure you have the Lynker NWM hydrofabric, FORCING and CHRTOUT files from the 
+NWM retrospective dataset, and catchment attributes downloaded, and make sure you 
+change the filepaths in the appropriate lines.
 
 This script is not functional yet!!!
 
-01/08/2025
+To run the script, use this command:
+python 0108_data_process.py dates
+example of a dates argument: 2008/200801* (pulls all time steps from January 2008)
+
+01/09/2025
 Quinn Lee - qylee@crimson.ua.edu
 Sonam Lama - slama@crimson.ua.edu
 '''
@@ -15,10 +20,6 @@ Sonam Lama - slama@crimson.ua.edu
 
 import pandas as pd
 import geopandas as gpd
-import numpy as np
-from shapely.geometry import Point, Polygon
-import shutil
-import time
 import datetime
 import multiprocessing as mp
 import xarray as xr
@@ -28,12 +29,16 @@ import glob
 from exactextract import exact_extract
 import warnings
 
+# Sets string for (globbed) time period selection for FORCING and CHRTOUT files from system args
+time_arg = sys.argv[1]
+
 # Ignores warnings about CRS mismatch. if we don't do this the output blows up
 warnings.filterwarnings('ignore')
 
 # Reads information about desired catchments from csv
-cats_path = 'path/to/csv'
+cats_path = 'all_data.csv'
 catchments = pd.read_csv(cats_path)
+catchments = catchments[:1000]
 
 # generate pair IDs for each upstream/downstream pair of catchments in case data gets shuffled around by accident
 pairids = []
@@ -48,12 +53,8 @@ catchments['pair_id'] = pairids
 # create list of COMIDs
 comids = catchments['comid'].tolist()
 
-forc_path = '/media/volume/Imp_Data/FORCING/2008'
-
-ngiab_output_dir = '/media/volume/Imp_Data/quinn_test_atts/ngiab_preprocess_output/'
-
-lst = os.listdir(forc_path)
-num_t = len(lst)
+# path to catchment attributes
+ngiab_output_dir = '/media/volume/Clone_Imp_Data/quinn_test_atts/ngiab_preprocess_output/'
 
 # generate path to attribute files for one catchment, as well as CATID
 def getclosest_array(i):
@@ -80,7 +81,8 @@ def parallel_gca():
 attr_paths, catids = parallel_gca()
 
 # use globbed filepath, opens forcing NC files 
-forc_dataset = xr.open_mfdataset("/media/volume/Imp_Data/FORCING/2008/200801*.LDASIN_DOMAIN1")
+forc_path = "/media/volume/Clone_Imp_Data/FORCING/" + time_arg + ".LDASIN_DOMAIN1"
+forc_dataset = xr.open_mfdataset(forc_path)
 
 # get timestamps for all time steps in study period
 times = forc_dataset.time.values
@@ -122,7 +124,8 @@ def get_q(qlat_files, id_list, index_col="feature_id", value_col="streamflow"):
     return frame
 
 # use globbed filepath to generate q_dataset
-q_dataset = get_q(glob.glob("/media/volume/Imp_Data/CHRTOUT/2008/200801*.CHRTOUT_DOMAIN1"), comids)
+chrtout_path = "/media/volume/Clone_Imp_Data/CHRTOUT/" + time_arg + ".CHRTOUT_DOMAIN1"
+q_dataset = get_q(glob.glob(chrtout_path), comids)
 q_dataset.reset_index(inplace=True)
 
 # define column names for final dataset
@@ -205,9 +208,14 @@ def process_catchment(k):
 
 # Collects and saves data for all catchments over all timesteps
 # Outputs a file that logs errors and progress
-output_name = 'output' + datetime.date.today().isoformat() + '.txt'
+exp_dirname = '../runs/experiment_'+datetime.date.today().isoformat()+'/'
+if not os.path.exists(exp_dirname):
+    os.makedirs(exp_dirname)
+output_name = exp_dirname + 'output.txt'
+
 results = []
-for i in range(len(catchments)):
+#for i in range(len(catchments)):
+for i in range(2):
     try:
         result = process_catchment(i)
         results.append(result)
@@ -229,7 +237,7 @@ except Exception as e:
         file.write(f"Error: {e}\n")
 
 try:
-    data.to_csv('runs/experiment_2024-10-15/jan_data_agg.csv')
+    data.to_csv(exp_dirname + 'data.csv') # change this to whatever name you like
     with open(output_name, 'a') as file:
         file.write('saved :D\n')
 except Exception as e:
