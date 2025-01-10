@@ -208,7 +208,7 @@ def process_catchment(k):
     args = [(time_strs[i], times[i], lat, lon, comid, du, pair_id, catid, attr_values)
             for i in range(len(time_strs))]
     
-    with mp.Pool(processes=30) as pool:
+    with mp.Pool(processes=mp.cpu_count()) as pool:
         results = pool.starmap(process_time, args)
 
     #print("finished mp")
