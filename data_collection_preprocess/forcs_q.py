@@ -5,6 +5,27 @@ import glob
 from exactextract import exact_extract
 import datetime
 import os
+import multiprocessing.pool as mp2
+
+# Defining classes to make nested parallelism work
+class NoDaemonProcess(mp.Process):
+    @property
+    def daemon(self):
+        return False
+
+    @daemon.setter
+    def daemon(self, value):
+        pass
+
+class NoDaemonContext(type(mp.get_context())):
+    Process = NoDaemonProcess
+
+# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
+# because the latter is only a wrapper function, not a proper class.
+class MyPool(mp2.Pool):
+    def __init__(self, *args, **kwargs):
+        kwargs['context'] = NoDaemonContext()
+        super(MyPool, self).__init__(*args, **kwargs)
 
 def forcing_process(time_arg):
     # use globbed filepath, opens forcing NC files 
@@ -26,53 +47,35 @@ def forcing_process(time_arg):
     #return forc_dataset, time_strs
     return forc_dataset, times
 
+# gets all relevant streamflow data from one timestep (one CHRTOUT file)
+def process_chrtout_file2(filename, id_list, value_col="streamflow"):
+    with xr.open_dataset(filename) as ds:
+        df =  ds[["time", value_col]].sel(feature_id=id_list).to_dataframe()
+        # with ThreadPoolExecutor(max_workers = 100) as executor:
+        #     df_list = list(executor.map(
+        #                    lambda id: nested_multithreading_catchments(
+        #                       id, ds, value_col), 
+        #                    id_list))
+        # df = pd.concat(df_list)
+        return df
+    
+# gets all relevant streamflow data from multiple timesteps through 
+    # parallelization
+def get_q(qlat_files, id_list, index_col="feature_id", 
+            value_col="streamflow"):
+
+    with mp.Pool(processes=mp.cpu_count()) as pool:
+        results = pool.starmap(process_chrtout_file2, 
+                                [(filename, id_list) 
+                                for filename in qlat_files])
+
+    frame = pd.concat(results, axis=0, ignore_index=False)
+
+    return frame
+
 def chrtout_process(time_arg, comids):
     # process CHANNEL ROUTING (CHRTOUT) files, returns df of streamflow values
     #problem_comids = []
-
-    # gets all relevant streamflow data from one timestep (one CHRTOUT file)
-    def process_chrtout_file2(filename, id_list, value_col="streamflow"):
-        with xr.open_dataset(filename) as ds:
-            df =  ds[["time", value_col]].sel(feature_id=id_list).to_dataframe()
-            # with ThreadPoolExecutor(max_workers = 100) as executor:
-            #     df_list = list(executor.map(
-            #                    lambda id: nested_multithreading_catchments(
-            #                       id, ds, value_col), 
-            #                    id_list))
-            # df = pd.concat(df_list)
-            return df
-    
-    '''
-    # gets all relevant streamflow data from one timestep (one CHRTOUT file)
-    def process_chrtout_file(filename, id_list, value_col="streamflow"):
-        with xr.open_dataset(filename) as ds:
-            df_list = []
-            try:
-                for id in id_list:
-                    df_cat = ds[["time", value_col]].sel(
-                        feature_id=id).to_dataframe()
-                    df_list.append(df_cat)
-            except:
-                problem_comids.append(id) 
-                print(id, " not found")
-                #id_list.remove[id]
-
-            df = pd.concat(df_list)
-            return df'''
-
-    # gets all relevant streamflow data from multiple timesteps through 
-    # parallelization
-    def get_q(qlat_files, id_list, index_col="feature_id", 
-              value_col="streamflow"):
-
-        with mp.Pool(processes=mp.cpu_count()) as pool:
-            results = pool.starmap(process_chrtout_file2, 
-                                   [(filename, id_list) 
-                                    for filename in qlat_files])
-
-        frame = pd.concat(results, axis=0, ignore_index=False)
-
-        return frame
 
     # use globbed filepath to generate q_dataset
     chrtout_path = "/media/volume/Clone_Imp_Data/CHRTOUT/" + time_arg + \
@@ -101,7 +104,11 @@ def process_time(t, comid, du, pair_id, catid, attr_values, hydrofabric,
                                       "+wktext +no_defs")
         zonal_stats = exact_extract(raster, gdf, 'mean', 
                                     include_cols='divide_id', output='pandas')
-        forcing_data.append(zonal_stats['mean'][0])
+        try:
+            forcing_data.append(zonal_stats['mean'][0])
+        except:
+            forcing_data.append(-9999)
+            continue
     # Append forcing data for each variable
     for var_value in forcing_data:
         row.append(var_value)
@@ -123,8 +130,8 @@ def process_time(t, comid, du, pair_id, catid, attr_values, hydrofabric,
 def process_catchment(k, catchments, comids, attr_paths, times, colnames,
                       hydrofabric, forcing_vars, forc_dataset, q_dataset):
     df = {}
-    lat = catchments['y'][k]
-    lon = catchments['x'][k]
+    #lat = catchments['y'][k]
+    #lon = catchments['x'][k]
     comid = comids[k]
     attr_path = attr_paths[k]
     catid = catchments['catchment_id'][k]
@@ -140,7 +147,7 @@ def process_catchment(k, catchments, comids, attr_paths, times, colnames,
              forcing_vars, forc_dataset, q_dataset)
             for i in range(len(times))]
     
-    with mp.Pool(processes=mp.cpu_count()) as pool:
+    with mp.Pool(processes=10) as pool:
         results = pool.starmap(process_time, args)
 
     #print("finished mp")
@@ -148,7 +155,51 @@ def process_catchment(k, catchments, comids, attr_paths, times, colnames,
     df = pd.DataFrame.from_dict(df, orient='index', columns=colnames)
     return df
 
-def save_data(time_arg, catchments, comids, attr_paths, times, colnames, 
+# Uses nested parallelism
+def save_data_np(time_arg, catchments, comids, attr_paths, times, colnames, 
+              hydrofabric, forcing_vars, forc_dataset, q_dataset):
+    # Collects and saves data for all catchments over all timesteps
+    # Outputs a file that logs errors and progress
+    exp_dirname = '../runs/experiment_'+datetime.date.today().isoformat()+'/'
+    if not os.path.exists(exp_dirname):
+        os.makedirs(exp_dirname)
+
+    output_name = exp_dirname + 'output.txt'
+    t1 = datetime.datetime.now()
+    # separate runs in output file
+    with open(output_name, 'a') as file:
+        toprint = ('MP run for ' + time_arg + ' started at ' + 
+                   t1.strftime("%m/%d/%Y %H:%M:%S") + '\n')
+        file.write(toprint)
+
+    #args = [i for i in range(len(catchments))]
+    args = [(j, catchments, comids, attr_paths, times, colnames, hydrofabric,
+             forcing_vars, forc_dataset, q_dataset) for j in range(2)]
+
+    pool = MyPool(10)
+
+    results = pool.starmap(process_catchment, args)
+    results = pd.concat(results)
+
+    try:
+        parsed_time = time_arg.replace("/", "").strip("*")
+        results.to_csv(exp_dirname + parsed_time + '.csv') 
+        with open(output_name, 'a') as file:
+            file.write('saved :D\n')
+    except Exception as e:
+        with open(output_name, 'a') as file:
+            file.write(f"Error: {e}\n")
+    pool.close()
+    pool.join()
+
+    t2 = datetime.datetime.now()
+    with open(output_name, 'a') as file:
+        toprint = ('MP run for ' + time_arg + ' elapsed time in s: ' 
+                   + str((t2-t1).total_seconds()) + '\n')
+        file.write(toprint)
+
+# Regular file saving, no nested parallelism
+def save_data_reg(time_arg, catchments, comids, attr_paths, times, colnames, 
               hydrofabric, forcing_vars, forc_dataset, q_dataset):
     # Collects and saves data for all catchments over all timesteps
     # Outputs a file that logs errors and progress
@@ -158,14 +209,15 @@ def save_data(time_arg, catchments, comids, attr_paths, times, colnames,
 
     output_name = exp_dirname + 'output.txt'
 
+    t1 = datetime.datetime.now()
     # separate runs in output file
     with open(output_name, 'a') as file:
-        toprint = 'Run started at ' + \
-            datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' for ' + \
-            time_arg + '\n'
+        toprint = ('Regular run for ' + time_arg + ' started at ' 
+                   + t1.strftime("%m/%d/%Y %H:%M:%S") + '\n')
         file.write(toprint)
 
     results = []
+
     #for i in range(len(catchments)):
     for i in range(2):
         try:
@@ -191,9 +243,16 @@ def save_data(time_arg, catchments, comids, attr_paths, times, colnames,
             file.write(f"Error: {e}\n")
 
     try:
-        data.to_csv(exp_dirname + time_arg + '.csv')
+        parsed_time = time_arg.replace("/", "").strip("*")
+        data.to_csv(exp_dirname + parsed_time + '.csv')
         with open(output_name, 'a') as file:
             file.write('saved :D\n')
     except Exception as e:
         with open(output_name, 'a') as file:
             file.write(f"Error: {e}\n")
+
+    t2 = datetime.datetime.now()
+    with open(output_name, 'a') as file:
+        toprint = ('Regular run for ' + time_arg +' elapsed time in s: ' + 
+                   str((t2-t1).total_seconds()) + '\n')
+        file.write(toprint)    
