@@ -8,9 +8,16 @@ make sure you change the filepaths in the appropriate lines.
 This script is not functional yet!!!
 
 To run the script, use this command:
-python 0108_data_process.py dates
-example of a dates argument: 2008/200801* (pulls all time steps from January 
-2008)
+python data_process.py [-h] [-r] time_filename
+
+positional arguments:
+  time_filename  Path to text file with list of time arguments 
+    (ex. 2008/200801*)
+
+options:
+  -h, --help     show this help message and exit
+  -r, --regular  Use non-parallelized method of saving data. Significantly 
+    slower
 
 01/13/2025
 Quinn Lee - qylee@crimson.ua.edu
@@ -23,10 +30,20 @@ import sys
 import warnings
 import setup
 import forcs_q
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("time_filename", 
+                    help="Path to text file with list of time arguments "\
+                        "(ex. 2008/200801*)")
+parser.add_argument("-r", "--regular", action="store_true",
+                    help="Use non-parallelized method of saving data. " \
+                        "Significantly slower")
+args = parser.parse_args()
 
 # Sets string for (globbed) time period selection for FORCING and CHRTOUT files 
 # from system args
-time_filename = sys.argv[1]
+time_filename = args.time_filename
 with open(time_filename, 'r') as time_file:
     time_args = time_file.read()
     time_args = time_args.split('\n')
@@ -51,7 +68,7 @@ hydrofabric = setup.hydrofabric_setup(hf_path)
 # Set up data columns
 forcing_vars = ['U2D', 'V2D', 'LWDOWN', 'RAINRATE', 'T2D', 'Q2D', 'PSFC', 
                 'SWDOWN', 'LQFRAC']
-colnames = setup.colnames(attr_paths, forcing_vars)
+colnames = setup.col_names(attr_paths, forcing_vars)
 
 # Save data
 for time_arg in time_args:
@@ -61,5 +78,11 @@ for time_arg in time_args:
     # Open CHRTOUT files
     q_dataset = forcs_q.chrtout_process(time_arg, comids)
 
-    forcs_q.save_data(time_arg, catchments, comids, attr_paths, times, colnames,
-                      hydrofabric, forcing_vars, forc_dataset, q_dataset)
+    if args.regular:
+        forcs_q.save_data_reg(time_arg, catchments, comids, attr_paths, times, 
+                          colnames, hydrofabric, forcing_vars, forc_dataset, 
+                          q_dataset)
+    else:
+        forcs_q.save_data_np(time_arg, catchments, comids, attr_paths, times, 
+                          colnames, hydrofabric, forcing_vars, forc_dataset, 
+                          q_dataset)
