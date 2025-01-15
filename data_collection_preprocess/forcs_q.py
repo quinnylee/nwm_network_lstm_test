@@ -173,12 +173,12 @@ def save_data_np(time_arg, catchments, comids, attr_paths, times, colnames,
         file.write(toprint)
 
     #args = [i for i in range(len(catchments))]
-    args = [(j, catchments, comids, attr_paths, times, colnames, hydrofabric,
+    args2 = [(j, catchments, comids, attr_paths, times, colnames, hydrofabric,
              forcing_vars, forc_dataset, q_dataset) for j in range(2)]
 
     pool = MyPool(10)
 
-    results = pool.starmap(process_catchment, args)
+    results = pool.starmap(process_catchment, args2)
     results = pd.concat(results)
 
     try:
