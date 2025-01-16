@@ -44,6 +44,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("time_filename", 
                     help="Path to text file with list of time arguments "\
                         "(ex. 2008/200801*)")
+parser.add_argument("output_filename",
+                    help="Path to output csv file")
 parser.add_argument("-r", "--regular", action="store_true",
                     help="Use non-parallelized method of saving data. " \
                         "Significantly slower")
@@ -71,7 +73,7 @@ class MyPool(mp2.Pool):
 
 def forcing_process(time_arg):
     # use globbed filepath, opens forcing NC files 
-    forc_path = "/media/volume/Clone_Imp_Data/FORCING/" + time_arg + \
+    forc_path = "/media/volume/sdb/FORCING/" + time_arg + \
                 ".LDASIN_DOMAIN1"
     forc_dataset = xr.open_mfdataset(forc_path)
 
@@ -120,7 +122,7 @@ def chrtout_process(time_arg, comids):
     #problem_comids = []
 
     # use globbed filepath to generate q_dataset
-    chrtout_path = "/media/volume/Clone_Imp_Data/CHRTOUT/" + time_arg + \
+    chrtout_path = "/media/volume/sdb/CHRTOUT/" + time_arg + \
         ".CHRTOUT_DOMAIN1"
     q_dataset = get_q(glob.glob(chrtout_path), comids)
     q_dataset.reset_index(inplace=True)
@@ -215,16 +217,18 @@ def save_data_np(time_arg):
     args2 = [i for i in range(len(catchments))]
     #args2 = [j for j in range(3)]
 
-    pool = MyPool(20)
+    pool = MyPool(16)
 
     results = pool.map(process_catchment, args2)
     results = pd.concat(results)
 
     try:
-        parsed_time = time_arg.replace("/", "").strip("*")
-        results.to_csv(exp_dirname + parsed_time + '.csv') 
-        with open(output_name, 'a') as file:
-            file.write('saved :D\n')
+        if os.path.exists(exp_dirname + output_filename):
+            results.to_csv(exp_dirname + output_filename, mode = 'a')
+        else:
+            results.to_csv(exp_dirname + output_filename)
+            with open(output_name, 'a') as file:
+                file.write('saved :D\n')
     except Exception as e:
         with open(output_name, 'a') as file:
             file.write(f"Error: {e}\n")
@@ -279,10 +283,12 @@ def save_data_reg(time_arg):
             file.write(f"Error: {e}\n")
 
     try:
-        parsed_time = time_arg.replace("/", "").strip("*")
-        data.to_csv(exp_dirname + parsed_time + '.csv')
-        with open(output_name, 'a') as file:
-            file.write('saved :D\n')
+        if os.path.exists(exp_dirname + output_filename):
+            results.to_csv(exp_dirname + output_filename, mode = 'a')
+        else:
+            results.to_csv(exp_dirname + output_filename)
+            with open(output_name, 'a') as file:
+                file.write('saved :D\n')
     except Exception as e:
         with open(output_name, 'a') as file:
             file.write(f"Error: {e}\n")
@@ -300,6 +306,8 @@ with open(time_filename, 'r') as time_file:
     time_args = time_file.read()
     time_args = time_args.split('\n')
 
+output_filename = args.output_filename
+
 # Ignores warnings about CRS mismatch. if we don't do this the output blows up
 warnings.filterwarnings('ignore')
 
@@ -309,7 +317,7 @@ catchments = setup.read_cats(cats_path)
 comids = setup.get_comids(catchments)
 
 # Read catchment attribute data
-ngiab_output_dir = "/media/volume/Clone_Imp_Data/quinn_test_atts" \
+ngiab_output_dir = "/media/volume/sdb/quinn_test_atts" \
     "/ngiab_preprocess_output/"
 attr_paths, catids = setup.parallel_gca(catchments, ngiab_output_dir)
 
