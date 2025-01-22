@@ -19,7 +19,7 @@ options:
   -r, --regular  Use non-parallelized method of saving data. Significantly 
     slower
 
-01/14/2025
+01/21/2025
 Quinn Lee - qylee@crimson.ua.edu
 Sonam Lama - slama@crimson.ua.edu
 '''
@@ -202,7 +202,7 @@ def process_catchment(k):
 def save_data_np(time_arg):
     # Collects and saves data for all catchments over all timesteps
     # Outputs a file that logs errors and progress
-    exp_dirname = '../runs/experiment_'+datetime.date.today().isoformat()+'/'
+    
     if not os.path.exists(exp_dirname):
         os.makedirs(exp_dirname)
 
@@ -224,7 +224,8 @@ def save_data_np(time_arg):
 
     try:
         if os.path.exists(exp_dirname + output_filename):
-            results.to_csv(exp_dirname + output_filename, mode = 'a')
+            results.to_csv(exp_dirname + output_filename, mode='a', 
+                           header=False)
         else:
             results.to_csv(exp_dirname + output_filename)
             with open(output_name, 'a') as file:
@@ -284,7 +285,8 @@ def save_data_reg(time_arg):
 
     try:
         if os.path.exists(exp_dirname + output_filename):
-            results.to_csv(exp_dirname + output_filename, mode = 'a')
+            results.to_csv(exp_dirname + output_filename, mode = 'a',
+                           header=False)
         else:
             results.to_csv(exp_dirname + output_filename)
             with open(output_name, 'a') as file:
@@ -298,6 +300,14 @@ def save_data_reg(time_arg):
         toprint = ('Regular run for ' + time_arg +' elapsed time in s: ' + 
                    str((t2-t1).total_seconds()) + '\n')
         file.write(toprint)    
+
+def final_preprocess(exp_dirname, filename):
+    '''Give filepath as filename and it finally rewrites the csv file in the same filepath'''
+    df = pd.read_csv(exp_dirname+filename)
+    df['pair_id'] = df['pair_id'].astype(float).astype(int)
+    df = df.sort_values(by='du', key=lambda col: col.map({'d': 0, 'u': 1}), kind = 'mergesort')
+    df = df.sort_values(by='pair_id', kind = 'mergesort')
+    df.to_csv(exp_dirname+'final'+filename, index=False)
 
 # Sets string for (globbed) time period selection for FORCING and CHRTOUT files 
 # from system args
@@ -331,7 +341,7 @@ forcing_vars = ['U2D', 'V2D', 'LWDOWN', 'RAINRATE', 'T2D', 'Q2D', 'PSFC',
 colnames = setup.col_names(attr_paths, forcing_vars)
 
 #pbar = tqdm.tqdm(total=(len(catchments)*len(time_args))) 
-
+exp_dirname = '../runs/experiment_'+datetime.date.today().isoformat()+'/'
 # Save data
 for time_arg in time_args:
     # Open forcing files
@@ -346,3 +356,5 @@ for time_arg in time_args:
         save_data_np(time_arg)
         
 #pbar.close()
+
+final_preprocess(exp_dirname, output_filename)
