@@ -2,3 +2,16 @@ __pycache__/
 runs/
 quinn_tests/
 tensors/
+BIG_DATA/
+data_examples/
+Results/
+aarm_network_model.ipynb
+adopt.py 
+app.log
+data_train.ipynb
+my_script.sh
+.venv/
+route_link/02_subset_data/scratch.ipynb
+route_link/NWM_v3_hydrofabric.gdb
+route_link/01_selectal/route_link_fsspec.ipynb
+ngiab_preprocess_output/

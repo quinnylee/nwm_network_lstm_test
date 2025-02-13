@@ -1,69 +1,74 @@
 # NWM Catchment Network LSTM: Predicting Upstream Flows
+Branch: data-collection
 
-## Description
-The purpose of this project is to advance the work done by [Ramirez Molina et al. (2024)](https://github.com/aarm1978/Synthetic_Stream_Gauges) and [Lee et al. (2024)](https://github.com/quinnylee/synthetic_stream_gages). These projects developed LSTM models to predict ungaged upstream flow values when given a downstream flow value. Data was generated using [Frame et al. (2023)'s](https://github.com/NWC-CUAHSI-Summer-Institute/deep_bucket_lab) Deep Bucket Lab, which generated synthetic hydrographs using a "leaky bucket" model. The original code that the rest of the repository takes inspiration from is aarm_network_model.ipynb.
+- [NWM Catchment Network LSTM: Predicting Upstream Flows](#nwm-catchment-network-lstm-predicting-upstream-flows)
+  - [Description of repository](#description-of-repository)
+  - [Description of branch](#description-of-branch)
+  - [Installation and usage](#installation-and-usage)
+  - [Questions?](#questions)
+  - [References/Credits](#referencescredits)
 
-Initial testing using synthetic data showed promising results. This project implements Phase 2 of testing by using data from the [National Water Model retrospective data set](https://github.com/NOAA-Big-Data-Program/bdp-data-docs/blob/main/nwm/README.md) instead of data generated from the bucket models. Phase 3 of testing will be addressed in a later project and will use real-world gaged data.
+## Description of repository
+
+Our project's goal is to construct a dataset of historical gage estimates for ungaged basins across the NextGen domain using machine learning (ML) techniques to assimilate known gage values from nearby basins into our predictions. ML models have been shown to predict flows well in ungaged basins (Kratzert et al., 2019; see also Ghaneei & Moradkhani, 2025; Frame et al., 2025), and if we constrain the ML training with information from observed flows in the same network, we can increase the accuracy of the ungaged flow estimates (Fisher et al., 2020). 
+
+We have conducted experiments with synthetic hydrology to show that, with two-basin networks, one downstream and one upstream, an ML model can be trained to provide a higher accuracy estimate of the upstream flows from "ungaged" synthetic basins than can be obtained by training an ML model on individual basins alone [(Ramirez Molina et al., 2024; ](https://github.com/aarm1978/Synthetic_Stream_Gauges) [Lee et al., 2024)](https://github.com/quinnylee/synthetic_stream_gages). Building on these synthetic experiments, we propose to expand this proof-of-concept to include more robust training using National Water Model (NWM) data.
+
+This project uses data from the [NWM 3.0 retrospective dataset](https://github.com/NOAA-Big-Data-Program/bdp-data-docs/blob/main/nwm/README.md) instead of synthetic data. We used the NWM 3.0 channel hydrofabric to select adjacent basin pairs (one upstream and one downstream). We used PyTorch to create a long short-term memory (LSTM) model that takes meteorological forcings, basin attributes, and downstream streamflow values to predict our "ungaged" upstream value. We chose to work with the NWM 3.0 retrospective dataset because it gave us a near-infinite amount of data to train and validate our model, and because we had greater control over the study area and network geometries. This phase of the project will result in a prototype workflow and LSTM model for ML-assisted data assimilation. 
+
+Phases 3 and 4 of this project will be addressed in later repositories and will use real-world gaged data. These phases will result in retrospective datasets of high-confidence estimates of flow at ungaged basins. These datasets can be used by the hydrologic community as robust evaluation datasets to tune predictive models for ungaged basins within the NextGen Framework. This workflow will also lay the foundation for future researchers interested in ML-assisted data assimilation across more complex network topologies.
 
 This model is still actively under development.
 
-## data_collection_preprocess
-This folder contains files used to collect and preprocess forcing and attribute data from the National Water Model (NWM).
+## Description of branch
+The purpose of this branch is to develop a small-scale prototype input dataset for our ML model. We are limiting our study area to Alabama, but once the workflow is refined, we will expand our study area to the whole NWM domain. The NWM's RouteLink files and channel hydrofabric were used to select approximately 10,000 basin pairs in Alabama (one upstream and one downstream). 
 
-### Shapefiles
-Shapefiles are used to generate random coordinates for study site selection. Shapefiles were sourced from the U.S. Census Bureau.
+The processes to effectively subset NWM forcings to the study area and period are incomplete and non-functional. **We would greatly appreciate contributions to this area.** The existing code draws heavily from the [NGIAB_data_preprocess package (Cunningham et al., 2025)](https://github.com/CIROH-UA/NGIAB_data_preprocess).
 
-tl_2016_01_cousub: Shapefile for the state of Alabama
-tl_2023_us_state: Shapefile of the United States
+## Installation and usage
 
-### all_data.csv
-This file contains almost 5,000 randomly selected pairs of stream reaches and their corresponding NWM catchments across the continental United States. Under the column "du", "d" indicates that it is a downstream reach, and "u" indicates that it is an upstream reach. Each pair is listed as a consecutive "du" pair. For example, at the top of the csv, cat-2527958 & cat-2528001 form a pair, and the next two reaches cat-2873598 & cat-2873590 form a pair. The coordinate for each point is also listed, as well as the NHD COMID. This file can be used for experimenting with preprocessing or various scripts.
+You can simply clone this repository and checkout the `data-collection` branch to access the data processing tools in the `route_link` folder.
 
-### coords_forcings_atts.sh
-This shell script contains a command to use the ngiab_data_preprocess package to find all NWM catchments upstream of a given coordinate. The script requires the input of a path to a csv with coordinates. 
+`route_link/01_selectal` contains tools to select basin pairs in Alabama by traversing the NWM 3.0 hydrofabric. The tools in this directory draw heavily from Halgren (2024)'s `route_link_fsspec.ipynb`. `route_link/02_subset_data` contains `incorporate_ngiab_pp.ipynb`, the notebook used to subset NWM forcings. **This is the notebook that requires the most code review and development.**
 
-### Using the data preprocessing notebook
+This branch assumes that you have a good amount of NetCDF files downloaded from the NOAA NWM retrospective AWS bucket and that you want to preprocess these files into a format that the LSTM model code likes. This branch also assumes that you have the NWM 3.0 hydrofabric geodatabase downloaded.
 
-This notebook assumes that you have a good amount of NetCDF files downloaded from the NOAA NWM retrospective AWS bucket and that you want to preprocess these files into a format that the LSTM model code likes. It also assumes that you want a random sample of points from some shapefile. You will need a shapefile of some area within CONUS. You will need the following packages:
-- pandas
-- geopandas
-- numpy
-- shapely
-- shutil
-- datetime
-- random
-- multiprocessing
+The following packages are required to run the files in the `route_link` directory:
+- fsspec
 - xarray
-- os
-- sys
-- glob
-- ngiab_data_preprocess
-
-The notebook will generate random points from a shapefile, find its corresponding catchment (arbitrarily considered downstream), select an upstream catchment close to each downstream catchment, and collect forcing/streamflow/attribute data from the NWM NetCDF files into a nice CSV.
-
-Note: the notebook requires some extra work on the user's end. An intermediate step requires the use of an R package or GIS software (R recommended).
-
-## data_examples
-
-Contains several (very small) datasets that can be used to test out the model.
-
-## LSTM model notes
-
-You can simply clone this repository to access the LSTM, which is in the notebook, and several small preliminary data sets. 
-The following packages are required:
+- kerchunk
+- geopandas
+- functools
 - numpy
+- typing
+- logging
+- json
+- time
+- multiprocessing
 - pandas
-- matplotlib
-- IPython
+- exactextract
+- pathlib
+- rich
+- psutil
 - math
-- torch
-- scikit-learn
-- tqdm
-
-Additionally, the LSTM can run on a CPU, but is optimized for a machine with a CUDA-enabled GPU or Apple MPS.
-
-You can simply change out the file path to the data at the beginning of section 1.2. There may be errors with names of model parameters, but those are easy to fix.
+- warnings
+- dask
+- shutil
 
 ## Questions?
 
-Contact Quinn Lee (data collection and preprocessing) at qylee@crimson.ua.edu or Sonam Lama (machine learning modeling) at slama@crimson.ua.edu.
+Contact Quinn Lee (author of branch) at qylee@ua.edu or Sonam Lama (author of model) at slama@crimson.ua.edu.
+
+## References/Credits
+
+Fisher, C. K., Pan, M., & Wood, E. F. (2020). Spatiotemporal assimilation–interpolation of discharge records through inverse streamflow routing. *Hydrology and Earth System Sciences*, 24(1), 293–305. https://doi.org/10.5194/hess-24-293-2020
+
+Frame, J. M., Araki, R., Bhuiyan, S. A., Bindas, T., Rapp, J., Bolotin, L., et al. (2025). Machine learning for a heterogeneous water modeling framework. *JAWRA Journal of the American Water Resources Association*, 61(1). https://doi.org/10.1111/1752-1688.70000
+
+Ghaneei, P., & Moradkhani, H. (2025). DeepBase: A deep learning-based daily Baseflow dataset across the United States. *Scientific Data*, 12(1). https://doi.org/10.1038/s41597-025-04389-y
+
+Kratzert, F., Klotz, D., Herrnegger, M., Sampson, A. K., Hochreiter, S., & Nearing, G. S. (2019). Toward improved predictions in ungauged basins: Exploiting the power of machine learning. *Water Resources Research*, 55(12), 11344–11354. https://doi.org/10.1029/2019wr026065
+
+Ramírez Molina, A. A., Frame, J., Halgren, J., & Gong, J. (2024). *Synthetic stream gauges: An LSTM-based approach to enhance river streamflow predictions in unmonitored segments*. ms, The University of Alabama.
+
+James Halgren: conceptualization
