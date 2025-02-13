@@ -42,12 +42,12 @@ Contact Quinn Lee (author of branch) at qylee@ua.edu or Sonam Lama (author of mo
 
 ## References
 
-Fisher, C. K., Pan, M., & Wood, E. F. (2020). Spatiotemporal assimilation–interpolation of discharge records through inverse streamflow routing. Hydrology and Earth System Sciences, 24(1), 293–305. https://doi.org/10.5194/hess-24-293-2020 
+Fisher, C. K., Pan, M., & Wood, E. F. (2020). Spatiotemporal assimilation–interpolation of discharge records through inverse streamflow routing. *Hydrology and Earth System Sciences*, 24(1), 293–305. https://doi.org/10.5194/hess-24-293-2020 
 
-Frame, J. M., Araki, R., Bhuiyan, S. A., Bindas, T., Rapp, J., Bolotin, L., et al. (2025). Machine learning for a heterogeneous water modeling framework. JAWRA Journal of the American Water Resources Association, 61(1). https://doi.org/10.1111/1752-1688.70000 
+Frame, J. M., Araki, R., Bhuiyan, S. A., Bindas, T., Rapp, J., Bolotin, L., et al. (2025). Machine learning for a heterogeneous water modeling framework. *JAWRA Journal of the American Water Resources Association*, 61(1). https://doi.org/10.1111/1752-1688.70000 
 
-Ghaneei, P., & Moradkhani, H. (2025). DeepBase: A deep learning-based daily Baseflow dataset across the United States. Scientific Data, 12(1). https://doi.org/10.1038/s41597-025-04389-y 
+Ghaneei, P., & Moradkhani, H. (2025). DeepBase: A deep learning-based daily Baseflow dataset across the United States. *Scientific Data*, 12(1). https://doi.org/10.1038/s41597-025-04389-y 
 
-Kratzert, F., Klotz, D., Herrnegger, M., Sampson, A. K., Hochreiter, S., & Nearing, G. S. (2019). Toward improved predictions in ungauged basins: Exploiting the power of machine learning. Water Resources Research, 55(12), 11344–11354. https://doi.org/10.1029/2019wr026065  
+Kratzert, F., Klotz, D., Herrnegger, M., Sampson, A. K., Hochreiter, S., & Nearing, G. S. (2019). Toward improved predictions in ungauged basins: Exploiting the power of machine learning. *Water Resources Research*, 55(12), 11344–11354. https://doi.org/10.1029/2019wr026065  
 
-Ramírez Molina, A. A., Frame, J., Halgren, J., & Gong, J. (2024). Synthetic stream gauges: An LSTM-based approach to enhance river streamflow predictions in unmonitored segments. ms, The University of Alabama. 
+Ramírez Molina, A. A., Frame, J., Halgren, J., & Gong, J. (2024). *Synthetic stream gauges: An LSTM-based approach to enhance river streamflow predictions in unmonitored segments*. ms, The University of Alabama. 
