@@ -3,9 +3,13 @@ Branch: data-collection
 
 ## Table of Contents
 - [NWM Catchment Network LSTM: Predicting Upstream Flows](#nwm-catchment-network-lstm-predicting-upstream-flows)
+  - [Table of Contents](#table-of-contents)
   - [Description of repository](#description-of-repository)
   - [Description of branch](#description-of-branch)
   - [Installation and usage](#installation-and-usage)
+  - [Directories and content](#directories-and-content)
+    - [route\_link/01\_selectal](#route_link01_selectal)
+    - [route\_link/02\_subset\_data](#route_link02_subset_data)
   - [Questions?](#questions)
   - [References/Credits](#referencescredits)
 
@@ -24,15 +28,11 @@ This model is still actively under development.
 ## Description of branch
 The purpose of this branch is to develop a small-scale prototype input dataset for our ML model. We are limiting our study area to Alabama, but once the workflow is refined, we will expand our study area to the whole NWM domain. The NWM's RouteLink files and channel hydrofabric were used to select approximately 10,000 basin pairs in Alabama (one upstream and one downstream). 
 
-The processes to effectively subset NWM forcings to the study area and period are incomplete and non-functional. **We would greatly appreciate contributions to this area.** The existing code draws heavily from the [NGIAB_data_preprocess package (Cunningham et al., 2025)](https://github.com/CIROH-UA/NGIAB_data_preprocess).
+The processes to effectively subset NWM forcings to the study area and period are incomplete and non-functional. The existing code draws heavily from the [NGIAB_data_preprocess package (Cunningham et al., 2025)](https://github.com/CIROH-UA/NGIAB_data_preprocess). **Our end goal with this branch is to use the selected basin pairs in `al_pairs.txt` to subset forcings, basin attributes, and streamflow values and format them in a Parquet file that is compatible with the models in main and quinn_ml. We would greatly appreciate any contributions to this area.**
 
 ## Installation and usage
 
-You can simply clone this repository and checkout the `data-collection` branch to access the data processing tools in the `route_link` folder.
-
-`route_link/01_selectal` contains tools to select basin pairs in Alabama by traversing the NWM 3.0 hydrofabric. The tools in this directory draw heavily from Halgren (2024)'s `route_link_fsspec.ipynb`. `route_link/02_subset_data` contains `incorporate_ngiab_pp.ipynb`, the notebook used to subset NWM forcings. **This is the notebook that requires the most code review and development.**
-
-This branch assumes that you have a good amount of NetCDF files downloaded from the NOAA NWM retrospective AWS bucket and that you want to preprocess these files into a format that the LSTM model code likes. This branch also assumes that you have the NWM 3.0 hydrofabric geodatabase downloaded.
+You can simply clone this repository and checkout the `data-collection` branch to access the data processing tools in the `route_link` folder. Make sure to unzip the states .zip file sourced from the [U.S. Census Bureau](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html) if you plan on using the tools in `route_link/01_selectal`.
 
 The following packages are required to run the files in the `route_link` directory:
 - fsspec
@@ -55,6 +55,31 @@ The following packages are required to run the files in the `route_link` directo
 - warnings
 - dask
 - shutil
+- os
+- shapely
+
+## Directories and content
+
+### route_link/01_selectal
+
+`route_link/01_selectal` contains tools to select basin pairs in Alabama by traversing the NWM 3.0 hydrofabric. The tools in this directory draw heavily from Halgren (2024)'s `route_link_fsspec.ipynb`.
+
+The files in this directory are as follows:
+- `nhd_network.py` from the [NOAA-OWP t-route repository](https://github.com/NOAA-OWP/t-route/)
+  - Functions from this module are imported in the notebooks.
+- `al_catchments.ipynb`
+  - Subsets a `routelink.nc` file to a specific state.
+- `find_reaches.ipynb`
+  - Traverses a `routelink.nc` file to find networks of connected basins of particular sizes and shapes. This notebook is pre-configured to find two-basin (one upstream and one downstream) networks from the Alabama routelink file.
+- `al_routelink.nc`
+  - Subset of [`RouteLink_CONUS.nc`](https://www.nco.ncep.noaa.gov/pmb/codes/nwprod/nwm.v3.0.13/parm/domain/) to Alabama using the included shapefile.
+- `al_pairs.txt`
+  - Dictionary of NWM reach IDs selected from `find_reaches.ipynb`. Keys are headwaters and values are tailwaters.
+
+### route_link/02_subset_data
+`route_link/02_subset_data` contains `incorporate_ngiab_pp.ipynb`, the notebook used to subset NWM forcings. **This is the notebook that requires the most code review and development. This notebook currently does not work.**
+
+This branch assumes that you have a good amount of NetCDF files downloaded from the NOAA NWM retrospective AWS bucket and that you want to preprocess these files into a format that the LSTM model code likes. This branch also assumes that you have the NWM 3.0 hydrofabric geodatabase downloaded.
 
 ## Questions?
 
@@ -73,3 +98,5 @@ Kratzert, F., Klotz, D., Herrnegger, M., Sampson, A. K., Hochreiter, S., & Neari
 Ramírez Molina, A. A., Frame, J., Halgren, J., & Gong, J. (2024). *Synthetic stream gauges: An LSTM-based approach to enhance river streamflow predictions in unmonitored segments*. ms, The University of Alabama.
 
 James Halgren: conceptualization
+
+Josh Cunningham: massive amounts of code
