@@ -1,6 +1,15 @@
 # NWM Catchment Network LSTM: Predicting Upstream Flows
 Branch: quinn_ml
 
+## Table of Contents
+- [NWM Catchment Network LSTM: Predicting Upstream Flows](#nwm-catchment-network-lstm-predicting-upstream-flows)
+  - [Table of Contents](#table-of-contents)
+  - [Description of repository](#description-of-repository)
+  - [Description of branch](#description-of-branch)
+  - [Installation and usage](#installation-and-usage)
+  - [Questions?](#questions)
+  - [References/Credits](#referencescredits)
+
 ## Description of repository
 
 Our project’s goal is to construct a dataset of historical gage estimates for ungaged basins across the NextGen domain using machine learning (ML) techniques to assimilate known gage values from nearby basins into our predictions. ML models have been shown to predict flows well in ungaged basins (Kratzert et al., 2019; see also Ghaneei & Moradkhani, 2025; Frame et al., 2025), and if we constrain the ML training with information from observed flows in the same network, we can increase the accuracy of the ungaged flow estimates (Fisher et al., 2020). 
@@ -40,7 +49,7 @@ Additionally, the LSTM can run on a CPU, but is optimized for a machine with a C
 
 Contact Quinn Lee (author of branch) at qylee@ua.edu or Sonam Lama (author of model) at slama@crimson.ua.edu.
 
-## References
+## References/Credits
 
 Fisher, C. K., Pan, M., & Wood, E. F. (2020). Spatiotemporal assimilation–interpolation of discharge records through inverse streamflow routing. *Hydrology and Earth System Sciences*, 24(1), 293–305. https://doi.org/10.5194/hess-24-293-2020 
 
@@ -51,3 +60,6 @@ Ghaneei, P., & Moradkhani, H. (2025). DeepBase: A deep learning-based daily Base
 Kratzert, F., Klotz, D., Herrnegger, M., Sampson, A. K., Hochreiter, S., & Nearing, G. S. (2019). Toward improved predictions in ungauged basins: Exploiting the power of machine learning. *Water Resources Research*, 55(12), 11344–11354. https://doi.org/10.1029/2019wr026065  
 
 Ramírez Molina, A. A., Frame, J., Halgren, J., & Gong, J. (2024). *Synthetic stream gauges: An LSTM-based approach to enhance river streamflow predictions in unmonitored segments*. ms, The University of Alabama. 
+
+James Halgren: conceptualization
+Chad Perry: code review
