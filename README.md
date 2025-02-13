@@ -62,4 +62,5 @@ Kratzert, F., Klotz, D., Herrnegger, M., Sampson, A. K., Hochreiter, S., & Neari
 Ramírez Molina, A. A., Frame, J., Halgren, J., & Gong, J. (2024). *Synthetic stream gauges: An LSTM-based approach to enhance river streamflow predictions in unmonitored segments*. ms, The University of Alabama. 
 
 James Halgren: conceptualization
+
 Chad Perry: code review
