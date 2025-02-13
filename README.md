@@ -1,6 +1,7 @@
 # NWM Catchment Network LSTM: Predicting Upstream Flows
 Branch: data-collection
 
+## Table of Contents
 - [NWM Catchment Network LSTM: Predicting Upstream Flows](#nwm-catchment-network-lstm-predicting-upstream-flows)
   - [Description of repository](#description-of-repository)
   - [Description of branch](#description-of-branch)
