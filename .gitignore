@@ -2,3 +2,14 @@ __pycache__/
 runs/
 quinn_tests/
 tensors/
+.venv/
+data_examples/
+my_script.sh
+app.log
+adopt.py
+data_collection_preprocess/
+data_examples/
+Results/
+aarm_network_model.ipynb
+ngiab_preprocess_output/
+route_link/
