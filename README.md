@@ -74,7 +74,7 @@ Additionally, the LSTM can run on a CPU, but is optimized for a machine with a C
 You can simply change out the file path to the data at the beginning of section 1.2. There may be errors with names of model parameters, but those are easy to fix.
 
 ## my_script.sh
-This is just a simple bash script yo transfer Forcing and Channel routing data from s3 bucket to volume.
+This is just a simple bash script to transfer Forcing and Channel routing data from s3 bucket to volume.
 
 ## Questions?
 
